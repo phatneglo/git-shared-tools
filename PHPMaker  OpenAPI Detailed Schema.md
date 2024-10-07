@@ -41,6 +41,40 @@ function Api_Action($app)
 
 ## File Contents
 
+### /app/global.php
+```php
+<?php
+
+namespace PHPMaker2024\AppSystem;
+
+use PHPMaker2024\AppSystem as App;
+
+
+include_once(dirname(__DIR__, 1) . "/app/lib/ApiService.php");
+
+
+function validateJwt($request, $response)
+{
+    $authHeader = $request->getHeaderLine('Authorization');
+    $jwt = str_replace('Bearer ', '', $authHeader);
+
+    // Decode the JWT
+    $payload = DecodeJwt($jwt);
+
+    // If the JWT is invalid, return a 401 Unauthorized response
+    if (isset($payload['failureMessage']) || !isset($jwt) || empty($jwt)) {
+        $response = $response->withHeader('Content-Type', 'application/json');
+        $response->getBody()->write(json_encode(['error' => 'Unauthorized']));
+        return $response;
+    }
+
+    // If the JWT is valid, return null
+    return null;
+}
+
+```
+
+
 ### /app/api.php
 
 ```php
