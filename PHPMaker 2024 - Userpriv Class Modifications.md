@@ -34,39 +34,62 @@ This modification allows the system to load level permissions specific to the se
 The `run()` method has been updated to handle the "update" action differently:
 
 ```php
-if (Post("action") == "update") {
-    $this->CurrentAction = Post("action");
-    
-    // Get the user_level_id from the form
-    $user_level_id = Post("x_user_level_id");
-    $this->user_level_id->setFormValue($user_level_id);
-    
-    // Load the level_permissions for this user_level_id
-    $systemInfo = ExecuteRow("SELECT
-            systems.level_permissions,
-            user_levels.user_level_id
-    FROM
-            systems
-            INNER JOIN
-            user_levels
-            ON
-                    systems.system_id = user_levels.system_id
-    WHERE
-            user_levels.user_level_id = " . $user_level_id);
-    
-    if (!empty($systemInfo["level_permissions"])) {
-        $permissionsArray = json_decode($systemInfo["level_permissions"], true);
-    } else {
-        $permissionsArray = [];
-    }
-    
-    // Process the privileges
-    $this->Privileges = [];
-    
-    foreach ($permissionsArray as $tableInfo) {
-        // ... (privilege processing logic)
+} else {
+    if (Post("action") == "update") {
+        $this->CurrentAction = Post("action");
+        
+        // Get the user_level_id from the form
+        $user_level_id = Post("x_user_level_id");
+        $this->user_level_id->setFormValue($user_level_id);
+        
+        // Load the level_permissions for this user_level_id
+        $systemInfo = ExecuteRow("SELECT
+                systems.level_permissions,
+                user_levels.user_level_id
+        FROM
+                systems
+                INNER JOIN
+                user_levels
+                ON
+                        systems.system_id = user_levels.system_id
+        WHERE
+                user_levels.user_level_id = " . $user_level_id);
+        
+        if (!empty($systemInfo["level_permissions"])) {
+            $permissionsArray = json_decode($systemInfo["level_permissions"], true);
+        } else {
+            $permissionsArray = [];
+        }
+        
+        // Process the privileges
+        $this->Privileges = [];
+        
+        foreach ($permissionsArray as $tableInfo) {
+            $tableName = $tableInfo[0];
+            $listName = $tableInfo[5] ?? $tableInfo[1];
+            
+            $privilege = 0;
+            $postIndex = array_search($tableName, array_column($permissionsArray, 0));
+            
+            if ($postIndex !== false) {
+                $privilege += (int)Post("add_" . $postIndex, 0);
+                $privilege += (int)Post("delete_" . $postIndex, 0);
+                $privilege += (int)Post("edit_" . $postIndex, 0);
+                $privilege += (int)Post("list_" . $postIndex, 0);
+                $privilege += (int)Post("view_" . $postIndex, 0);
+                $privilege += (int)Post("search_" . $postIndex, 0);
+                $privilege += (int)Post("admin_" . $postIndex, 0);
+                $privilege += (int)Post("import_" . $postIndex, 0);
+                $privilege += (int)Post("lookup_" . $postIndex, 0);
+                $privilege += (int)Post("export_" . $postIndex, 0);
+                $privilege += (int)Post("push_" . $postIndex, 0);
+            }
+            
+            $this->Privileges[$listName] = $privilege;
+        }
     }
 }
+
 ```
 
 This change allows for more dynamic handling of user level permissions based on the system's configuration.
