@@ -99,6 +99,7 @@ This change allows for more dynamic handling of user level permissions based on 
 The `editRow()` method has been significantly modified to work with the new permission structure:
 
 ```php
+// Update privileges
 protected function editRow()
 {
     global $Security;
@@ -132,8 +133,11 @@ protected function editRow()
         // Get privilege from $this->Privileges, default to 0 if not set
         $privilege = $this->Privileges[$listName] ?? 0;
 
-        // Update or insert privilege
-        $sql = "UPDATE " . Config("USER_LEVEL_PRIV_TABLE") . " ... ";
+        $sql = "UPDATE " . Config("USER_LEVEL_PRIV_TABLE") . "
+                SET " . Config("USER_LEVEL_PRIV_PRIV_FIELD") . " = " . $privilege . "
+                WHERE " . Config("USER_LEVEL_PRIV_TABLE_NAME_FIELD") . " = '" . AdjustSql($tableName, Config("USER_LEVEL_PRIV_DBID")) . "'
+                AND " . Config("USER_LEVEL_PRIV_USER_LEVEL_ID_FIELD") . " = " . $this->user_level_id->CurrentValue;
+
         $result = Execute($sql);
 
         if ($result === false) {
@@ -143,7 +147,14 @@ protected function editRow()
 
         // If no rows were updated, insert a new record
         if ($result == 0) {
-            $sql = "INSERT INTO " . Config("USER_LEVEL_PRIV_TABLE") . " ... ";
+            $sql = "INSERT INTO " . Config("USER_LEVEL_PRIV_TABLE") . "
+                    (" . Config("USER_LEVEL_PRIV_TABLE_NAME_FIELD") . ", 
+                     " . Config("USER_LEVEL_PRIV_USER_LEVEL_ID_FIELD") . ", 
+                     " . Config("USER_LEVEL_PRIV_PRIV_FIELD") . ")
+                    VALUES ('" . AdjustSql($tableName, Config("USER_LEVEL_PRIV_DBID")) . "', 
+                            " . $this->user_level_id->CurrentValue . ", 
+                            " . $privilege . ")";
+
             $result = Execute($sql);
             if ($result === false) {
                 $success = false;
@@ -159,6 +170,7 @@ protected function editRow()
         return false;
     }
 }
+
 ```
 
 This updated method now works with the new permission structure, updating or inserting privileges based on the loaded level permissions.
@@ -654,8 +666,11 @@ class Userpriv extends UserLevels
             // Get privilege from $this->Privileges, default to 0 if not set
             $privilege = $this->Privileges[$listName] ?? 0;
     
-            // Update or insert privilege
-            $sql = "UPDATE " . Config("USER_LEVEL_PRIV_TABLE") . " ... ";
+            $sql = "UPDATE " . Config("USER_LEVEL_PRIV_TABLE") . "
+                    SET " . Config("USER_LEVEL_PRIV_PRIV_FIELD") . " = " . $privilege . "
+                    WHERE " . Config("USER_LEVEL_PRIV_TABLE_NAME_FIELD") . " = '" . AdjustSql($tableName, Config("USER_LEVEL_PRIV_DBID")) . "'
+                    AND " . Config("USER_LEVEL_PRIV_USER_LEVEL_ID_FIELD") . " = " . $this->user_level_id->CurrentValue;
+    
             $result = Execute($sql);
     
             if ($result === false) {
@@ -665,7 +680,14 @@ class Userpriv extends UserLevels
     
             // If no rows were updated, insert a new record
             if ($result == 0) {
-                $sql = "INSERT INTO " . Config("USER_LEVEL_PRIV_TABLE") . " ... ";
+                $sql = "INSERT INTO " . Config("USER_LEVEL_PRIV_TABLE") . "
+                        (" . Config("USER_LEVEL_PRIV_TABLE_NAME_FIELD") . ", 
+                         " . Config("USER_LEVEL_PRIV_USER_LEVEL_ID_FIELD") . ", 
+                         " . Config("USER_LEVEL_PRIV_PRIV_FIELD") . ")
+                        VALUES ('" . AdjustSql($tableName, Config("USER_LEVEL_PRIV_DBID")) . "', 
+                                " . $this->user_level_id->CurrentValue . ", 
+                                " . $privilege . ")";
+    
                 $result = Execute($sql);
                 if ($result === false) {
                     $success = false;
@@ -747,5 +769,4 @@ class Userpriv extends UserLevels
         //$footer = "your footer";
     }
 }
-
 ```
